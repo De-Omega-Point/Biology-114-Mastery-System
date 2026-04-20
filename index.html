@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biology 114 Mastery System</title>
+  <meta name="description" content="A calm, visual, ADHD-friendly Biology 114 study website with chapter navigator, planner, notes, quiz lab, flashcards, and progress tracking." />
+  <style>
+    :root {
+      --bg: #f5f7f5;
+      --bg2: #eef3ef;
+      --panel: rgba(255,255,255,0.86);
+      --card: rgba(255,255,255,0.78);
+      --text: #243328;
+      --muted: #607264;
+      --line: rgba(108, 142, 122, 0.18);
+      --line-strong: rgba(108, 142, 122, 0.32);
+      --mint: #cfe8db;
+      --sage: #8eb79f;
+      --sage-strong: #5f8f77;
+      --lav: #e6def4;
+      --sky: #dcecf4;
+      --peach: #f8e8de;
+      --radius: 24px;
+      --shadow: 0 18px 40px rgba(80, 108, 91, 0.10);
+      --max: 1360px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(230,222,244,0.7), transparent 32%),
+        radial-gradient(circle at top right, rgba(207,232,219,0.7), transparent 30%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 50%, #f8faf8 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    body.focus-mode {
+      --panel: rgba(255,255,255,0.98);
+      --card: rgba(255,255,255,0.96);
+      --shadow: 0 14px 28px rgba(80, 108, 91, 0.08);
+      --line: rgba(108, 142, 122, 0.14);
+    }
+    .orb { position: fixed; border-radius: 999px; filter: blur(16px); opacity: 0.55; pointer-events: none; z-index: 0; animation: drift 18s ease-in-out infinite alternate; }
+    .orb.a { width: 240px; height: 240px; top: 70px; left: 4%; background: rgba(207,232,219,0.52); }
+    .orb.b { width: 180px; height: 180px; top: 380px; right: 8%; background: rgba(230,222,244,0.48); animation-duration: 24s; }
+    .orb.c { width: 280px; height: 280px; bottom: 90px; left: 14%; background: rgba(220,236,244,0.52); animation-duration: 22s; }
+    .orb.d { width: 150px; height: 150px; bottom: 60px; right: 12%; background: rgba(248,232,222,0.58); animation-duration: 26s; }
+    @keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(18px, 20px) scale(1.06); } }
+    a { color: inherit; text-decoration: none; }
+    .shell { width: min(var(--max), calc(100% - 24px)); margin: 0 auto; position: relative; z-index: 1; }
+    .topbar {
+      position: sticky; top: 12px; z-index: 50; margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 14px 18px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); box-shadow: var(--shadow);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, var(--mint), var(--lav)); border: 1px solid rgba(108, 142, 122, 0.18); box-shadow: inset 0 0 18px rgba(255,255,255,0.7); font-size: 1.4rem; }
+    .brand h1 { margin: 0; font-size: 1rem; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.83rem; }
+    .nav-links { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn, .nav-links a {
+      border: 1px solid var(--line); background: rgba(255,255,255,0.65); color: var(--text); padding: 10px 14px; border-radius: 999px; cursor: pointer; transition: 0.18s ease; font: inherit;
+    }
+    .btn:hover, .nav-links a:hover { transform: translateY(-1px); border-color: var(--line-strong); background: rgba(207,232,219,0.58); }
+    .btn-primary { background: linear-gradient(135deg, var(--mint), var(--sky)); font-weight: 600; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-top: 22px; }
+    .panel, section.block, .toc, .control-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+    .panel, section.block { padding: 24px; }
+    .toc, .control-box { padding: 18px; }
+    .eyebrow { display: inline-flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 999px; background: rgba(207,232,219,0.72); color: var(--sage-strong); font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(108, 142, 122, 0.16); margin-bottom: 14px; }
+    .hero h2 { margin: 0 0 14px; font-size: clamp(2.2rem, 4.6vw, 4.4rem); line-height: 0.98; letter-spacing: -0.045em; max-width: 12ch; }
+    .lead, .section-head p, .subcopy, .footer, .feedback, .note-copy { color: var(--muted); line-height: 1.66; }
+    .cta-row, .pill-row, .quiz-actions, .flash-actions, .planner-actions, .notes-actions, .tracker-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .metrics, .grid-2, .grid-3, .grid-4, .chapter-grid, .planner-grid, .notes-grid, .tracker-grid, .resource-grid, .stats-grid { display: grid; gap: 16px; }
+    .metrics { grid-template-columns: repeat(3,1fr); margin-top: 18px; }
+    .grid-2 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(3,1fr); }
+    .grid-4 { grid-template-columns: repeat(4,1fr); }
+    .chapter-grid { grid-template-columns: 280px 1fr; }
+    .planner-grid { grid-template-columns: repeat(2,1fr); }
+    .notes-grid { grid-template-columns: 1.1fr 0.9fr; }
+    .tracker-grid { grid-template-columns: repeat(3,1fr); }
+    .resource-grid { grid-template-columns: repeat(3,1fr); }
+    .stats-grid { grid-template-columns: repeat(4,1fr); }
+    .card, .metric, .quiz-card, .flash-card, .day-card, .chapter-panel, .planner-card, .notes-card, .tracker-card, .resource-card, .stat-card, .mini-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 8px 24px rgba(80,108,91,0.06); padding: 18px;
+    }
+    .metric { background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(207,232,219,0.28)); }
+    .metric .num, .stat-number { font-size: 1.8rem; font-weight: 800; color: var(--sage-strong); margin-bottom: 6px; }
+    .triple { display: grid; gap: 12px; }
+    .triple-card { padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: linear-gradient(135deg, rgba(255,255,255,0.84), rgba(207,232,219,0.46)); }
+    .triple-card:nth-child(2) { background: linear-gradient(135deg, rgba(255,255,255,0.84), rgba(230,222,244,0.46)); }
+    .triple-card:nth-child(3) { background: linear-gradient(135deg, rgba(255,255,255,0.84), rgba(220,236,244,0.46)); }
+    .section-kicker { color: var(--sage-strong); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.78rem; font-weight: 700; margin-bottom: 8px; }
+    .section-title { margin: 0 0 10px; }
+    .section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+    .section-head > p { max-width: 64ch; }
+    .pill, .status-chip, .chapter-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(207,232,219,0.68); border: 1px solid rgba(108,142,122,0.16); color: var(--sage-strong); font-size: 0.84rem; }
+    .diagram { font-family: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace; font-size: 0.92rem; white-space: pre-wrap; line-height: 1.7; color: #385145; border-radius: 16px; padding: 16px; border: 1px solid rgba(108, 142, 122, 0.16); background: rgba(255,255,255,0.72); }
+    .layout { display: grid; grid-template-columns: 290px 1fr; gap: 20px; margin: 24px auto 48px; }
+    .sidebar { position: sticky; top: 92px; align-self: start; display: grid; gap: 16px; }
+    .toc a { display: block; padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; color: var(--muted); border: 1px solid transparent; transition: 0.18s ease; }
+    .toc a:hover, .toc a.active { background: rgba(207,232,219,0.68); color: var(--text); border-color: rgba(108,142,122,0.16); }
+    .main { display: grid; gap: 20px; }
+    section.block { scroll-margin-top: 96px; }
+    .day-card { overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(207,232,219,0.28)); }
+    .day-top { padding: 18px 18px 12px; border-bottom: 1px solid rgba(108,142,122,0.12); }
+    .day-body, .micro-list, .checklist, .quiz-area, .flash-area, .chapter-tabs { display: grid; gap: 12px; }
+    .micro-item, .check, .mini-card, .planner-item { background: rgba(255,255,255,0.78); border: 1px solid rgba(108,142,122,0.12); border-radius: 14px; padding: 12px 14px; }
+    .check, .planner-item { display: flex; gap: 10px; align-items: flex-start; }
+    input[type="checkbox"] { accent-color: var(--sage-strong); margin-top: 3px; }
+    .quote { border-left: 4px solid rgba(108,142,122,0.58); border-radius: 0 14px 14px 0; background: rgba(207,232,219,0.6); padding: 14px 16px; color: var(--muted); line-height: 1.7; }
+    .planner-item { gap: 12px; margin-bottom: 12px; }
+    .planner-item:last-child { margin-bottom: 0; }
+    .planner-date { min-width: 80px; text-align: center; padding: 10px 8px; border-radius: 14px; background: linear-gradient(135deg, var(--mint), var(--lav)); font-weight: 700; line-height: 1.2; }
+    textarea, input[type="text"] { width: 100%; border: 1px solid rgba(108,142,122,0.18); background: rgba(255,255,255,0.84); color: var(--text); border-radius: 16px; padding: 14px 16px; font: inherit; outline: none; resize: vertical; }
+    textarea:focus, input[type="text"]:focus { border-color: rgba(108,142,122,0.3); box-shadow: 0 0 0 4px rgba(207,232,219,0.56); }
+    .notes-textarea { min-height: 280px; }
+    .notes-mini { min-height: 128px; }
+    .quiz-card, .flash-card { background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(220,236,244,0.26)); }
+    .flash-card { min-height: 250px; display: grid; align-content: space-between; gap: 16px; }
+    .flash-label { color: var(--sage-strong); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; font-size: 0.82rem; }
+    .flash-content { font-size: clamp(1.35rem, 2.8vw, 2.3rem); line-height: 1.22; font-weight: 700; }
+    .quiz-question { font-size: 1.24rem; line-height: 1.45; margin-bottom: 18px; }
+    .options { display: grid; gap: 10px; margin-bottom: 16px; }
+    .option { width: 100%; text-align: left; font: inherit; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(108,142,122,0.18); background: rgba(255,255,255,0.84); cursor: pointer; transition: 0.18s ease; color: var(--text); }
+    .option:hover { background: rgba(207,232,219,0.7); border-color: rgba(108,142,122,0.28); }
+    .option.selected { outline: 2px solid rgba(108,142,122,0.34); }
+    .option.correct { background: rgba(207,232,219,0.9); border-color: rgba(122,164,137,0.66); }
+    .option.wrong { background: rgba(248,232,222,0.88); border-color: rgba(204,123,123,0.56); }
+    .progress-bar { width: 100%; height: 12px; border-radius: 999px; background: rgba(255,255,255,0.8); border: 1px solid rgba(108,142,122,0.12); overflow: hidden; }
+    .progress-bar > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--sage), var(--mint), var(--sky)); transition: width 0.28s ease; }
+    .chapter-tab { width: 100%; justify-content: flex-start; background: rgba(255,255,255,0.78); cursor: pointer; transition: 0.18s ease; }
+    .chapter-tab:hover, .chapter-tab.active { background: rgba(207,232,219,0.84); color: var(--text); }
+    .table-wrap { overflow-x: auto; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,0.65); }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid rgba(108,142,122,0.12); vertical-align: top; }
+    th { background: rgba(207,232,219,0.7); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    .footer { padding: 24px 0 40px; text-align: center; }
+    @media (max-width: 1180px) {
+      .hero-grid, .layout, .grid-3, .grid-4, .chapter-grid, .planner-grid, .notes-grid, .tracker-grid, .resource-grid, .stats-grid { grid-template-columns: 1fr; }
+      .grid-2, .metrics { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .topbar { border-radius: 24px; }
+    }
+    @media (max-width: 760px) {
+      .shell { width: min(var(--max), calc(100% - 16px)); }
+      .panel, section.block, .toc, .control-box { padding: 18px; }
+      .nav-links { display: none; }
+      .hero h2 { max-width: none; }
+      .planner-item { flex-direction: column; }
+      .planner-date { min-width: auto; width: fit-content; }
+    }
+    @media print {
+      .topbar, .sidebar, .orb, .btn, .planner-actions, .notes-actions, .quiz-actions, .flash-actions, #chapterTabs { display: none !important; }
+      body { background: white; }
+      .shell { width: 100%; }
+      .hero-grid, .layout, .grid-2, .grid-3, .grid-4, .chapter-grid, .planner-grid, .notes-grid, .tracker-grid, .resource-grid, .stats-grid { grid-template-columns: 1fr !important; }
+      .panel, section.block, .card, .planner-card, .notes-card, .tracker-card, .resource-card, .stat-card, .chapter-panel, .quiz-card, .flash-card { box-shadow: none; background: white; }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div><div class="orb d"></div>
+  <div class="shell"><div class="topbar">
+    <div class="brand"><div class="brand-mark">🧬</div><div><h1>Biology 114 Mastery System</h1><p>Visual calm. Clear structure. One learning cockpit.</p></div></div>
+    <nav class="nav-links"><a href="#framework">Framework</a><a href="#chapters">Chapters</a><a href="#planner">Planner</a><a href="#quiz">Quiz Lab</a><a href="#notes">Notes</a></nav>
+  </div></div>
+  <header class="hero" id="top"><div class="shell"><div class="hero-grid">
+    <div class="panel">
+      <div class="eyebrow">🌿 ADHD-friendly visual learning website</div>
+      <h2>Master the course without frying your brain.</h2>
+      <p class="lead">This website turns Biology 114 into a calm, structured study system with chapter views, a 3-day sprint, quiz lab, flashcards, a syllabus-aware planner, saved notes, and export tools. It is designed for visual learners who need hierarchy, clarity, and less cognitive static.</p>
+      <div class="cta-row"><a class="btn btn-primary" href="#sprint">Start the 3-day sprint</a><button class="btn" id="printBtn" type="button">Print study pack</button><button class="btn" id="focusBtn" type="button">Toggle focus mode</button><button class="btn" id="exportAllBtn" type="button">Export notes + planner</button></div>
+      <div class="metrics"><div class="metric"><div class="num">9</div><div class="subcopy">course clusters turned into clean chapter views</div></div><div class="metric"><div class="num">3</div><div class="subcopy">days to build fast baseline mastery</div></div><div class="metric"><div class="num">1</div><div class="subcopy">single place for study, planning, notes, and review</div></div></div>
+    </div>
+    <div class="panel"><div class="section-kicker">Quick system map</div><h3 class="section-title">The whole course in one frame</h3><div class="triple"><div class="triple-card"><strong>⚙️ Engine</strong><div class="subcopy">Cells + energy. Life runs because fuel gets converted into usable work.</div></div><div class="triple-card"><strong>🧬 Code</strong><div class="subcopy">DNA + genes. Instructions tell cells what to build, repair, and pass on.</div></div><div class="triple-card"><strong>🌍 Network</strong><div class="subcopy">Organisms + ecosystems. Life interacts in systems, not in isolation.</div></div></div><div class="diagram" style="margin-top:12px;">SUN → ENERGY → FOOD → ATP → CELLS
+     ↓
+DNA → PROTEINS → TRAITS
+     ↓
+ORGANISM → POPULATION → ECOSYSTEM</div></div>
+  </div></div></header>
+
+  <div class="shell layout">
+    <aside class="sidebar">
+      <div class="toc"><h3 style="margin-top:0;">Mission map</h3><a href="#framework">Master framework</a><a href="#chapters">Chapter navigator</a><a href="#sprint">3-day sprint</a><a href="#loop">Study loop</a><a href="#planner">Planner</a><a href="#quiz">Quiz lab</a><a href="#flashcards">Flashcards</a><a href="#exam-pack">Exam pack</a><a href="#notes">Notes vault</a><a href="#tracker">Mastery tracker</a><a href="#resources">Resources</a></div>
+      <div class="control-box"><h3 style="margin-top:0;">Use this properly</h3><p>Don’t just read. Run the loop: watch, draw, explain, test, fix. That is where memory stops being fog and becomes structure.</p><div class="checklist"><label class="check"><input type="checkbox" /> <span>Study one concept at a time</span></label><label class="check"><input type="checkbox" /> <span>Draw each concept as a system</span></label><label class="check"><input type="checkbox" /> <span>Say it out loud from memory</span></label><label class="check"><input type="checkbox" /> <span>Use the planner and notes after each class</span></label></div></div>
+    </aside>
+    <main class="main">
+      <section class="block" id="framework"><div class="section-head"><div><div class="section-kicker">1. Quick snapshot</div><h3 class="section-title">Master framework</h3></div><p>Biology 114 is best learned as a connected system, not as a heap of disconnected facts. Treat the course like an ecosystem of ideas: cells, energy, code, change, and connection.</p></div><div class="grid-3"><div class="card"><h4>What this course is really about</h4><p>How life is built, powered, controlled, and connected.</p><div class="pill-row"><span class="pill">Cells</span><span class="pill">Energy</span><span class="pill">DNA</span><span class="pill">Evolution</span><span class="pill">Ecology</span></div></div><div class="card"><h4>Why it matters</h4><ul><li>Builds scientific thinking</li><li>Helps you read health and environment claims better</li><li>Gives you a systems lens for real life</li></ul></div><div class="card"><h4>How to win</h4><ul><li>Understand flow, not just terms</li><li>Draw diagrams constantly</li><li>Teach concepts in plain English</li></ul></div></div></section>
+
+      <section class="block" id="chapters"><div class="section-head"><div><div class="section-kicker">2. Chapter navigator</div><h3 class="section-title">One chapter at a time, without getting lost</h3></div><p>Use this like a modular map. Pick a chapter cluster, see the core idea, visual flow, what to remember, and how to verify it.</p></div><div class="chapter-grid"><div class="chapter-tabs" id="chapterTabs"></div><div class="chapter-panel" id="chapterPanel"></div></div></section>
+
+      <section class="block" id="sprint"><div class="section-head"><div><div class="section-kicker">3. 3-day hyper-learning plan</div><h3 class="section-title">Execution dashboard</h3></div><p>Use this when you need fast, high-retention mastery. Each day has one job. No bloat. No academic wallpaper.</p></div><div class="grid-3"><article class="day-card"><div class="day-top"><span class="pill">Day 1</span><h4>Build the engine</h4><p class="subcopy">Scientific method, chemistry of life, cell structure, cellular energy.</p></div><div class="day-body"><div class="micro-list"><div class="micro-item"><strong>Block 1</strong><div class="subcopy">Learn how science asks and tests questions.</div></div><div class="micro-item"><strong>Block 2</strong><div class="subcopy">Map the cell: membrane, nucleus, mitochondria, ribosomes.</div></div><div class="micro-item"><strong>Block 3</strong><div class="subcopy">Trace energy flow: food → glucose → ATP → cellular work.</div></div></div><div class="diagram">Cell → organelles → function
+Food → glucose → ATP → work</div><div class="checklist"><label class="check"><input type="checkbox" data-track="d1"> <span>I can explain ATP simply</span></label><label class="check"><input type="checkbox" data-track="d1"> <span>I can label major cell parts</span></label><label class="check"><input type="checkbox" data-track="d1"> <span>I can describe the scientific method</span></label></div></div></article><article class="day-card"><div class="day-top"><span class="pill">Day 2</span><h4>Decode the control layer</h4><p class="subcopy">DNA, genes, proteins, inheritance, mitosis, meiosis, mutation, variation.</p></div><div class="day-body"><div class="micro-list"><div class="micro-item"><strong>Block 1</strong><div class="subcopy">Map DNA → gene → protein → trait.</div></div><div class="micro-item"><strong>Block 2</strong><div class="subcopy">Separate mitosis from meiosis without mixing the two.</div></div><div class="micro-item"><strong>Block 3</strong><div class="subcopy">Connect variation to inheritance and evolution.</div></div></div><div class="diagram">DNA → genes → proteins → traits
+Mitosis = copy
+Meiosis = variation</div><div class="checklist"><label class="check"><input type="checkbox" data-track="d2"> <span>I can explain what a gene does</span></label><label class="check"><input type="checkbox" data-track="d2"> <span>I can compare mitosis and meiosis</span></label><label class="check"><input type="checkbox" data-track="d2"> <span>I can explain why variation matters</span></label></div></div></article><article class="day-card"><div class="day-top"><span class="pill">Day 3</span><h4>See the network</h4><p class="subcopy">Evolution, biodiversity, food chains, populations, ecosystems, conservation.</p></div><div class="day-body"><div class="micro-list"><div class="micro-item"><strong>Block 1</strong><div class="subcopy">Track energy from sun to plants to animals.</div></div><div class="micro-item"><strong>Block 2</strong><div class="subcopy">Explain natural selection in plain English.</div></div><div class="micro-item"><strong>Block 3</strong><div class="subcopy">Connect biodiversity to ecosystem stability.</div></div></div><div class="diagram">Sun → plants → animals → humans
+selection pressure → adaptation → survival</div><div class="checklist"><label class="check"><input type="checkbox" data-track="d3"> <span>I can explain a food chain</span></label><label class="check"><input type="checkbox" data-track="d3"> <span>I can define natural selection</span></label><label class="check"><input type="checkbox" data-track="d3"> <span>I can explain why ecosystems can collapse</span></label></div></div></article></div></section>
+
+      <section class="block" id="loop"><div class="section-head"><div><div class="section-kicker">4. Mastery loop</div><h3 class="section-title">The study method that actually works</h3></div><p>This is your standard operating sequence. Use it for every chapter, concept, lab prep session, and review block.</p></div><div class="grid-2"><div class="card"><div class="diagram">WATCH → DRAW → EXPLAIN → TEST → FIX
+         ↺ repeat</div><p>That loop beats passive reading because it forces understanding, retrieval, and correction.</p></div><div class="card"><h4>How to apply it</h4><ul><li><strong>Watch or read:</strong> one concept only</li><li><strong>Draw:</strong> turn it into a map or flow</li><li><strong>Explain:</strong> speak it from memory</li><li><strong>Test:</strong> use rapid questions</li><li><strong>Fix:</strong> patch the weak points immediately</li></ul></div></div><div class="quote">Memory likes movement. Make the idea move through your mouth, your hand, and your attention. That’s how it stops being slippery.</div></section>
+
+      <section class="block" id="planner"><div class="section-head"><div><div class="section-kicker">5. Syllabus planner</div><h3 class="section-title">Due dates, quiz checkpoints, and class rhythm</h3></div><p>Built from the syllabus timeline. Use it as a visual runway so nothing ambushes you.</p></div><div class="stats-grid"><div class="stat-card"><div class="stat-number">12</div><div class="subcopy">homework assignments</div></div><div class="stat-card"><div class="stat-number">5</div><div class="subcopy">lab reports</div></div><div class="stat-card"><div class="stat-number">7</div><div class="subcopy">quizzes</div></div><div class="stat-card"><div class="stat-number">887</div><div class="subcopy">total course points</div></div></div><div class="planner-grid" style="margin-top:16px;"><div class="planner-card"><h4>Important rhythm</h4><div id="plannerList"></div></div><div class="planner-card"><h4>Personal study runway</h4><p class="note-copy">Write your own plan beside the official rhythm. Think of it as laying stepping stones across the swamp.</p><input type="text" id="customPlanTitle" placeholder="Example: Review Chapters 1–3 Sunday afternoon"><div style="height:10px;"></div><textarea id="customPlanBody" class="notes-mini" placeholder="What will you do, when, and what will you verify?"></textarea><div class="planner-actions" style="margin-top:12px;"><button class="btn btn-primary" id="savePlanBtn" type="button">Save plan</button><button class="btn" id="clearPlanBtn" type="button">Clear plan</button></div><div class="mini-card" id="savedPlanPreview" style="margin-top:14px;">No personal plan saved yet.</div></div></div></section>
+
+      <section class="block" id="quiz"><div class="section-head"><div><div class="section-kicker">6. Quiz lab</div><h3 class="section-title">Interactive knowledge check</h3></div><p>Use this to test whether you actually know the material, not whether it merely looks familiar.</p></div><div class="quiz-area"><div class="progress-bar"><span id="quizProgress"></span></div><div class="quiz-card"><div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;"><span class="status-chip" id="quizCounter">Question 1 / 8</span><span class="status-chip" id="quizScore">Score: 0</span></div><div class="quiz-question" id="quizQuestion"></div><div class="options" id="quizOptions"></div><div class="quiz-actions"><button class="btn btn-primary" id="submitAnswer" type="button">Submit answer</button><button class="btn" id="nextQuestion" type="button">Next question</button><button class="btn" id="resetQuiz" type="button">Reset quiz</button></div><div class="feedback" id="quizFeedback">Choose an answer, then hit submit.</div></div></div></section>
+
+      <section class="block" id="flashcards"><div class="section-head"><div><div class="section-kicker">7. Flashcards</div><h3 class="section-title">Active recall deck</h3></div><p>Front first. Try to answer before flipping. That small pause is where the neural glue gets to work.</p></div><div class="flash-area"><div class="flash-card"><div><div class="flash-label" id="flashLabel">Front</div><div class="flash-content" id="flashContent">What is ATP?</div></div><div class="flash-actions"><button class="btn btn-primary" id="flipFlash" type="button">Flip card</button><button class="btn" id="prevFlash" type="button">Previous</button><button class="btn" id="nextFlashBtn" type="button">Next</button><span class="status-chip" id="flashCounter">Card 1 / 10</span></div></div></div></section>
+
+      <section class="block" id="exam-pack"><div class="section-head"><div><div class="section-kicker">8. Exam pack</div><h3 class="section-title">Likely-answer structures</h3></div><p>These prompts train concise explanation, which is the fastest route to exam confidence.</p></div><div class="grid-2"><div class="card"><h4>Rapid fire</h4><ul><li>What is a cell?</li><li>What is ATP?</li><li>What does DNA do?</li><li>Where does ecosystem energy begin?</li><li>Difference between mitosis and meiosis?</li></ul></div><div class="card"><h4>Explain in 1 to 2 sentences</h4><ul><li>How does food become energy in the body?</li><li>Why do organisms evolve?</li><li>Why is biodiversity important?</li><li>How are all living things connected?</li></ul></div></div><div class="table-wrap" style="margin-top:16px;"><table><thead><tr><th>Prompt</th><th>Winning answer shape</th><th>What to include</th></tr></thead><tbody><tr><td>How does food become energy?</td><td>Flow answer</td><td>Food → glucose → cellular respiration → ATP → cellular work</td></tr><tr><td>What does DNA do?</td><td>Instruction answer</td><td>Stores information, guides protein production, influences traits</td></tr><tr><td>Why does evolution happen?</td><td>Pressure answer</td><td>Variation exists, environments select, helpful traits spread</td></tr><tr><td>Why do ecosystems matter?</td><td>Connection answer</td><td>Energy flow, interdependence, biodiversity, stability</td></tr></tbody></table></div></section>
+
+      <section class="block" id="notes"><div class="section-head"><div><div class="section-kicker">9. Notes vault</div><h3 class="section-title">Save your own chapter notes and brain-dumps</h3></div><p>Use this after each lecture, lab, video, or revision block. Short notes beat heroic forgetting.</p></div><div class="notes-grid"><div class="notes-card"><h4>Main study notes</h4><textarea id="mainNotes" class="notes-textarea" placeholder="Write your own summaries here. Example: ATP is like a charged battery packet that cells spend on work..."></textarea><div class="notes-actions" style="margin-top:12px;"><button class="btn btn-primary" id="saveNotesBtn" type="button">Save notes</button><button class="btn" id="clearNotesBtn" type="button">Clear notes</button><button class="btn" id="exportNotesBtn" type="button">Export notes</button></div></div><div class="notes-card"><h4>Fast capture zones</h4><div class="mini-card"><strong>Things I keep mixing up</strong><textarea id="mixupNotes" class="notes-mini" placeholder="Example: Mitosis = copy, meiosis = variation"></textarea></div><div style="height:12px;"></div><div class="mini-card"><strong>Questions to ask in class</strong><textarea id="questionNotes" class="notes-mini" placeholder="Example: Do I need to memorise organelle names exactly or focus on function?"></textarea></div><div style="height:12px;"></div><div class="mini-card" id="notesStatus">Nothing saved yet.</div></div></div></section>
+
+      <section class="block" id="tracker"><div class="section-head"><div><div class="section-kicker">10. Mastery tracker</div><h3 class="section-title">See your progress</h3></div><p>This gives you a visible signal of completion. Very useful when your brain starts pretending the course is an infinite swamp.</p></div><div class="tracker-grid"><div class="tracker-card"><h4>Day 1 progress</h4><div class="progress-bar"><span id="trackDay1"></span></div><p class="subcopy" id="trackDay1Text">0 / 3 complete</p></div><div class="tracker-card"><h4>Day 2 progress</h4><div class="progress-bar"><span id="trackDay2"></span></div><p class="subcopy" id="trackDay2Text">0 / 3 complete</p></div><div class="tracker-card"><h4>Day 3 progress</h4><div class="progress-bar"><span id="trackDay3"></span></div><p class="subcopy" id="trackDay3Text">0 / 3 complete</p></div></div><div class="tracker-actions" style="margin-top:16px;"><button class="btn" id="clearTracker" type="button">Clear progress</button><span class="status-chip" id="overallStatus">Overall: 0 / 9 checkpoints complete</span></div></section>
+
+      <section class="block" id="resources"><div class="section-head"><div><div class="section-kicker">11. Resource stack</div><h3 class="section-title">External learning sources + course alignment</h3></div><p>Use the site as your command centre, then layer on videos and textbook support when needed.</p></div><div class="resource-grid"><div class="resource-card"><h4>YouTube search terms</h4><ul><li>cell structure animation simple</li><li>cellular respiration explained</li><li>DNA replication animation</li><li>mitosis versus meiosis simple</li><li>natural selection explained</li><li>ecosystem food chain simple</li></ul></div><div class="resource-card"><h4>Learning platforms</h4><ul><li>OpenStax Concepts of Biology</li><li>Khan Academy Biology</li><li>CrashCourse Biology</li></ul></div><div class="resource-card"><h4>Course survival rules</h4><ul><li>Homework is due before the next lecture day</li><li>Quizzes cover 2 to 3 chapters</li><li>Lowest lab, homework, and quiz scores can be dropped</li><li>Participation points matter every class</li></ul></div></div></section>
+    </main>
+  </div>
+
+  <footer class="footer shell">Built as a complete Biology 114 study website: chapter navigator, sprint, planner, quiz, flashcards, notes vault, export tools, and mastery tracker in one calm artifact.</footer>
+
+  <script>
+    const chapterData = [
+      { id: 'ch1', title: 'Scientific Method', icon: '🔬', core: 'Biology uses evidence, not vibes. Ask a question, build a hypothesis, test it, analyse results, refine your thinking.', visual: 'Question → Hypothesis → Experiment → Data → Conclusion', remember: ['Variables matter', 'Evidence beats assumption', 'Results can support or reject a hypothesis'], verify: 'Can you explain why controlled experiments matter?' },
+      { id: 'ch2', title: 'Chemistry of Life', icon: '🧪', core: 'Living systems are built from chemical parts. Water, molecules, and bonding make biology physically possible.', visual: 'Atoms → Molecules → Macromolecules → Living structure', remember: ['Water is central', 'Structure affects function', 'Chemistry is the base layer of life'], verify: 'Can you explain why water matters in living systems?' },
+      { id: 'ch3', title: 'Cell Structure & Function', icon: '🫧', core: 'Cells are the smallest living units. Each organelle does a job, and the job explains why the structure exists.', visual: 'Membrane → control | Nucleus → instructions | Mitochondria → energy', remember: ['Structure = function', 'Membrane controls traffic', 'Nucleus and mitochondria do different jobs'], verify: 'Can you label the major organelles and their jobs?' },
+      { id: 'ch4', title: 'Energy in Cells', icon: '⚡', core: 'Life runs on energy conversion. Cells turn stored energy into ATP, then spend ATP on work.', visual: 'Food → Glucose → Cellular Respiration → ATP → Work', remember: ['ATP is usable energy', 'Respiration releases energy', 'Photosynthesis stores energy'], verify: 'Can you explain how food becomes cellular energy?' },
+      { id: 'ch5', title: 'Cell Reproduction', icon: '🔁', core: 'Cells divide for growth, repair, and reproduction. Mitosis copies. Meiosis creates sex cells and variation.', visual: 'Mitosis → same | Meiosis → variation', remember: ['Mitosis = growth and repair', 'Meiosis = sex cells', 'Variation matters for inheritance'], verify: 'Can you explain mitosis versus meiosis in one sentence each?' },
+      { id: 'ch6', title: 'Genetics & Inheritance', icon: '🧬', core: 'Traits are influenced by genes. Inheritance patterns explain why traits appear across generations.', visual: 'DNA → Genes → Traits → Inheritance Patterns', remember: ['Genes are units of information', 'Traits are inherited in patterns', 'Variation exists between individuals'], verify: 'Can you explain what a gene is and how it affects traits?' },
+      { id: 'ch7', title: 'Molecular Biology', icon: '🧠', core: 'DNA information gets used to build proteins. Proteins then do the work that shapes cell function and traits.', visual: 'DNA → RNA → Protein → Action', remember: ['DNA stores code', 'RNA helps transfer instructions', 'Proteins carry out tasks'], verify: 'Can you explain how DNA instructions become proteins?' },
+      { id: 'ch8', title: 'Evolution & Diversity', icon: '🌱', core: 'Life changes over time. Natural selection spreads traits that help survival or reproduction.', visual: 'Variation + Pressure → Selection → Change Over Time', remember: ['Variation already exists', 'Environment creates pressure', 'Evolution happens across generations'], verify: 'Can you define natural selection without jargon?' },
+      { id: 'ch9', title: 'Ecology & Conservation', icon: '🌍', core: 'Organisms live inside systems. Energy moves, species interact, and biodiversity helps systems stay resilient.', visual: 'Sun → Producers → Consumers → Ecosystem Stability', remember: ['Energy starts with the sun', 'Food chains are energy maps', 'Biodiversity supports resilience'], verify: 'Can you explain why ecosystems can become unstable?' }
+    ];
+    const plannerData = [
+      { date: 'Feb 10', title: 'Course begins', desc: 'Read the syllabus and set up your study system.' },
+      { date: 'Feb 26', title: 'Quiz on Chapters 1–3 + Lab 1 due', desc: 'Scientific method, chemistry of life, cell structure.' },
+      { date: 'Mar 5', title: 'Quiz on Chapters 4–5', desc: 'Cellular energy and photosynthesis.' },
+      { date: 'Mar 19', title: 'Lab 3 due', desc: 'Catch up before spring break swings the gate shut.' },
+      { date: 'Apr 2', title: 'Quiz on Chapters 6–8', desc: 'Reproduction, inheritance, RNA and protein synthesis.' },
+      { date: 'Apr 9', title: 'Lab 7 due + Quiz on Chapters 9–10', desc: 'Molecular biology and biotechnology.' },
+      { date: 'Apr 16', title: 'Quiz on Chapters 11–12', desc: 'Evolution and diversity of life.' },
+      { date: 'Apr 30', title: 'Lab 8 due + Quiz on Chapters 13–15', desc: 'Microbes, plants, animals.' },
+      { date: 'May 7', title: 'Lab 11 due + final quiz + extra credit presentations', desc: 'Ecology, conservation, biodiversity.' }
+    ];
+    const quizData = [
+      { question: 'What is ATP best described as?', options: ['A type of DNA', 'The cell\'s usable energy currency', 'A membrane protein', 'A food group'], answer: 1, explanation: 'ATP is the cell\'s immediate energy currency. It powers cellular work.' },
+      { question: 'Which structure is most associated with controlling the cell\'s activities?', options: ['Nucleus', 'Cell membrane', 'Ribosome', 'Golgi apparatus'], answer: 0, explanation: 'The nucleus stores genetic material and acts as the control centre for many cellular activities.' },
+      { question: 'Which flow best represents how genetic information becomes visible traits?', options: ['ATP → DNA → proteins → traits', 'DNA → genes → proteins → traits', 'Traits → DNA → proteins → genes', 'Genes → ATP → traits → DNA'], answer: 1, explanation: 'DNA contains genes, genes guide protein production, and proteins help shape traits.' },
+      { question: 'What is the main difference between mitosis and meiosis?', options: ['Mitosis creates variation, meiosis copies identical cells', 'Mitosis is only in plants', 'Mitosis copies cells, meiosis creates sex cells with variation', 'They are the same process'], answer: 2, explanation: 'Mitosis is for growth and repair through copying. Meiosis produces sex cells and increases variation.' },
+      { question: 'Where does most energy in a food chain ultimately start?', options: ['Animals', 'Humans', 'The sun', 'Bacteria'], answer: 2, explanation: 'In most ecosystems, sunlight is captured by producers such as plants and starts the energy flow.' },
+      { question: 'Why is biodiversity important?', options: ['It makes ecosystems less stable', 'It helps ecosystems stay resilient and functional', 'It removes the need for food chains', 'It stops evolution'], answer: 1, explanation: 'Greater biodiversity generally improves resilience, stability, and the ability of ecosystems to handle disruption.' },
+      { question: 'What is the scientific method mainly used for?', options: ['Guessing quickly', 'Testing ideas with evidence', 'Memorising definitions', 'Avoiding experiments'], answer: 1, explanation: 'The scientific method helps form hypotheses, test them, analyse results, and refine understanding using evidence.' },
+      { question: 'Which statement best explains evolution by natural selection?', options: ['Individuals decide to evolve', 'Helpful traits can become more common over generations', 'All mutations are useful', 'Evolution stops when species are comfortable'], answer: 1, explanation: 'Natural selection means traits that improve survival or reproduction can spread through a population over time.' }
+    ];
+    const flashcards = [
+      { front: 'What is ATP?', back: 'ATP is the cell\'s usable energy currency. It powers cellular work.' },
+      { front: 'What does the nucleus do?', back: 'It stores genetic material and helps direct cellular activities.' },
+      { front: 'What is the cell membrane?', back: 'A boundary that helps control what enters and leaves the cell.' },
+      { front: 'DNA → ? → ? → Traits', back: 'DNA → genes → proteins → traits.' },
+      { front: 'Mitosis in one line', back: 'Mitosis copies cells for growth and repair.' },
+      { front: 'Meiosis in one line', back: 'Meiosis creates sex cells and increases variation.' },
+      { front: 'Where does ecosystem energy usually begin?', back: 'With sunlight captured by producers such as plants.' },
+      { front: 'What is biodiversity?', back: 'The variety of life in an area, which supports ecosystem resilience.' },
+      { front: 'What is natural selection?', back: 'A process where traits that help survival or reproduction can become more common over generations.' },
+      { front: 'What is the scientific method?', back: 'A structured way to ask questions, test ideas, analyse evidence, and refine conclusions.' }
+    ];
+    let currentQuiz = 0, selectedOption = null, submitted = false, score = 0, flashIndex = 0, flashFront = true, activeChapter = 0;
+    const chapterTabs = document.getElementById('chapterTabs');
+    const chapterPanel = document.getElementById('chapterPanel');
+    const plannerList = document.getElementById('plannerList');
+    const quizQuestion = document.getElementById('quizQuestion');
+    const quizOptions = document.getElementById('quizOptions');
+    const quizFeedback = document.getElementById('quizFeedback');
+    const quizCounter = document.getElementById('quizCounter');
+    const quizScore = document.getElementById('quizScore');
+    const quizProgress = document.getElementById('quizProgress');
+    const flashLabel = document.getElementById('flashLabel');
+    const flashContent = document.getElementById('flashContent');
+    const flashCounter = document.getElementById('flashCounter');
+    const trackerBoxes = document.querySelectorAll('input[data-track]');
+    const trackMap = { d1: { bar: document.getElementById('trackDay1'), text: document.getElementById('trackDay1Text') }, d2: { bar: document.getElementById('trackDay2'), text: document.getElementById('trackDay2Text') }, d3: { bar: document.getElementById('trackDay3'), text: document.getElementById('trackDay3Text') } };
+    const overallStatus = document.getElementById('overallStatus');
+    const mainNotes = document.getElementById('mainNotes');
+    const mixupNotes = document.getElementById('mixupNotes');
+    const questionNotes = document.getElementById('questionNotes');
+    const notesStatus = document.getElementById('notesStatus');
+    const customPlanTitle = document.getElementById('customPlanTitle');
+    const customPlanBody = document.getElementById('customPlanBody');
+    const savedPlanPreview = document.getElementById('savedPlanPreview');
+
+    function renderChapterTabs() {
+      chapterTabs.innerHTML = '';
+      chapterData.forEach((chapter, index) => {
+        const btn = document.createElement('button');
+        btn.className = `chapter-tab ${index === activeChapter ? 'active' : ''}`;
+        btn.type = 'button';
+        btn.innerHTML = `<span>${chapter.icon}</span><span>${chapter.title}</span>`;
+        btn.addEventListener('click', () => { activeChapter = index; renderChapterTabs(); renderChapterPanel(); });
+        chapterTabs.appendChild(btn);
+      });
+    }
+    function renderChapterPanel() {
+      const chapter = chapterData[activeChapter];
+      chapterPanel.innerHTML = `<span class="status-chip">${chapter.icon} ${chapter.title}</span><h4 style="margin:14px 0 10px; font-size:1.35rem;">${chapter.title}</h4><p class="subcopy" style="margin-top:0;">${chapter.core}</p><div class="diagram">${chapter.visual}</div><div style="height:16px;"></div><div class="grid-2"><div class="mini-card"><strong>What to remember</strong><ul>${chapter.remember.map(item => `<li>${item}</li>`).join('')}</ul></div><div class="mini-card"><strong>Verification gate</strong><p class="subcopy" style="margin:8px 0 0;">${chapter.verify}</p></div></div>`;
+    }
+    function renderPlanner() {
+      plannerList.innerHTML = plannerData.map(item => `<div class="planner-item"><div class="planner-date">${item.date}</div><div><strong>${item.title}</strong><p class="subcopy" style="margin:6px 0 0;">${item.desc}</p></div></div>`).join('');
+    }
+    function renderQuiz() {
+      const item = quizData[currentQuiz];
+      quizQuestion.textContent = item.question;
+      quizOptions.innerHTML = '';
+      selectedOption = null; submitted = false;
+      quizFeedback.textContent = 'Choose an answer, then hit submit.';
+      quizCounter.textContent = `Question ${currentQuiz + 1} / ${quizData.length}`;
+      quizScore.textContent = `Score: ${score}`;
+      quizProgress.style.width = `${(currentQuiz / quizData.length) * 100}%`;
+      item.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option'; btn.type = 'button'; btn.textContent = option;
+        btn.addEventListener('click', () => {
+          if (submitted) return;
+          selectedOption = index;
+          [...quizOptions.children].forEach(el => el.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+        quizOptions.appendChild(btn);
+      });
+    }
+    function renderFlash() {
+      const item = flashcards[flashIndex];
+      flashLabel.textContent = flashFront ? 'Front' : 'Back';
+      flashContent.textContent = flashFront ? item.front : item.back;
+      flashCounter.textContent = `Card ${flashIndex + 1} / ${flashcards.length}`;
+    }
+    function saveTracker() {
+      localStorage.setItem('bio114_tracker', JSON.stringify([...trackerBoxes].map(box => box.checked)));
+    }
+    function loadTracker() {
+      const raw = localStorage.getItem('bio114_tracker');
+      if (!raw) return;
+      try { JSON.parse(raw).forEach((value, index) => { if (trackerBoxes[index]) trackerBoxes[index].checked = !!value; }); } catch (error) { console.warn('Tracker load failed', error); }
+    }
+    function updateTracker() {
+      const counts = { d1: 0, d2: 0, d3: 0 };
+      trackerBoxes.forEach(box => { if (box.checked && counts[box.dataset.track] !== undefined) counts[box.dataset.track] += 1; });
+      Object.entries(counts).forEach(([key, value]) => { trackMap[key].bar.style.width = `${(value / 3) * 100}%`; trackMap[key].text.textContent = `${value} / 3 complete`; });
+      overallStatus.textContent = `Overall: ${counts.d1 + counts.d2 + counts.d3} / 9 checkpoints complete`;
+      saveTracker();
+    }
+    function saveNotes() {
+      localStorage.setItem('bio114_notes', JSON.stringify({ main: mainNotes.value, mixups: mixupNotes.value, questions: questionNotes.value }));
+      notesStatus.textContent = 'Notes saved locally in this browser.';
+    }
+    function loadNotes() {
+      const raw = localStorage.getItem('bio114_notes');
+      if (!raw) return;
+      try {
+        const payload = JSON.parse(raw);
+        mainNotes.value = payload.main || '';
+        mixupNotes.value = payload.mixups || '';
+        questionNotes.value = payload.questions || '';
+        notesStatus.textContent = 'Saved notes loaded.';
+      } catch (error) { console.warn('Notes load failed', error); }
+    }
+    function clearNotes() {
+      mainNotes.value = ''; mixupNotes.value = ''; questionNotes.value = '';
+      localStorage.removeItem('bio114_notes');
+      notesStatus.textContent = 'Notes cleared.';
+    }
+    function renderPlanPreview(payload) {
+      if (!payload.title && !payload.body) { savedPlanPreview.textContent = 'No personal plan saved yet.'; return; }
+      savedPlanPreview.innerHTML = `<strong>${payload.title || 'Untitled plan'}</strong><p class="subcopy" style="margin:8px 0 0;">${(payload.body || '-').replace(/\n/g, '<br>')}</p>`;
+    }
+    function savePlan() {
+      const payload = { title: customPlanTitle.value, body: customPlanBody.value };
+      localStorage.setItem('bio114_plan', JSON.stringify(payload));
+      renderPlanPreview(payload);
+    }
+    function loadPlan() {
+      const raw = localStorage.getItem('bio114_plan');
+      if (!raw) return;
+      try {
+        const payload = JSON.parse(raw);
+        customPlanTitle.value = payload.title || '';
+        customPlanBody.value = payload.body || '';
+        renderPlanPreview(payload);
+      } catch (error) { console.warn('Plan load failed', error); }
+    }
+    function clearPlan() {
+      customPlanTitle.value = ''; customPlanBody.value = '';
+      localStorage.removeItem('bio114_plan');
+      renderPlanPreview({ title: '', body: '' });
+    }
+    function downloadText(filename, content) {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+    }
+    function exportNotes() {
+      const content = ['BIOLOGY 114 NOTES', '', 'MAIN NOTES', mainNotes.value || '-', '', 'THINGS I KEEP MIXING UP', mixupNotes.value || '-', '', 'QUESTIONS TO ASK IN CLASS', questionNotes.value || '-'].join('\n');
+      downloadText('biology-114-notes.txt', content);
+    }
+    function exportAll() {
+      let plan = { title: '', body: '' };
+      try { const raw = localStorage.getItem('bio114_plan'); if (raw) plan = JSON.parse(raw); } catch (error) { console.warn('Plan export read failed', error); }
+      const content = ['BIOLOGY 114 MASTER EXPORT', '', 'PERSONAL PLAN', plan.title || '-', plan.body || '-', '', 'MAIN NOTES', mainNotes.value || '-', '', 'MIX UPS', mixupNotes.value || '-', '', 'CLASS QUESTIONS', questionNotes.value || '-', '', 'SYLLABUS PLANNER', ...plannerData.map(item => `${item.date} | ${item.title} | ${item.desc}`)].join('\n');
+      downloadText('biology-114-study-pack.txt', content);
+    }
+    document.getElementById('submitAnswer').addEventListener('click', () => {
+      if (submitted || selectedOption === null) { if (selectedOption === null) quizFeedback.textContent = 'Pick one option first.'; return; }
+      submitted = true;
+      const item = quizData[currentQuiz];
+      [...quizOptions.children].forEach((el, index) => { if (index === item.answer) el.classList.add('correct'); if (index === selectedOption && index !== item.answer) el.classList.add('wrong'); });
+      if (selectedOption === item.answer) { score += 1; quizFeedback.textContent = `Correct. ${item.explanation}`; } else { quizFeedback.textContent = `Not quite. ${item.explanation}`; }
+      quizScore.textContent = `Score: ${score}`;
+      quizProgress.style.width = `${((currentQuiz + 1) / quizData.length) * 100}%`;
+    });
+    document.getElementById('nextQuestion').addEventListener('click', () => {
+      if (currentQuiz < quizData.length - 1) { currentQuiz += 1; renderQuiz(); }
+      else { quizFeedback.textContent = `Quiz complete. Final score: ${score} / ${quizData.length}. Reset to run it again.`; quizProgress.style.width = '100%'; }
+    });
+    document.getElementById('resetQuiz').addEventListener('click', () => { currentQuiz = 0; score = 0; renderQuiz(); });
+    document.getElementById('flipFlash').addEventListener('click', () => { flashFront = !flashFront; renderFlash(); });
+    document.getElementById('prevFlash').addEventListener('click', () => { flashIndex = (flashIndex - 1 + flashcards.length) % flashcards.length; flashFront = true; renderFlash(); });
+    document.getElementById('nextFlashBtn').addEventListener('click', () => { flashIndex = (flashIndex + 1) % flashcards.length; flashFront = true; renderFlash(); });
+    trackerBoxes.forEach(box => box.addEventListener('change', updateTracker));
+    document.getElementById('clearTracker').addEventListener('click', () => { trackerBoxes.forEach(box => { box.checked = false; }); updateTracker(); });
+    document.getElementById('saveNotesBtn').addEventListener('click', saveNotes);
+    document.getElementById('clearNotesBtn').addEventListener('click', clearNotes);
+    document.getElementById('exportNotesBtn').addEventListener('click', exportNotes);
+    document.getElementById('savePlanBtn').addEventListener('click', savePlan);
+    document.getElementById('clearPlanBtn').addEventListener('click', clearPlan);
+    document.getElementById('exportAllBtn').addEventListener('click', exportAll);
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('focusBtn').addEventListener('click', () => document.body.classList.toggle('focus-mode'));
+    const tocLinks = document.querySelectorAll('.toc a');
+    const sections = [...document.querySelectorAll('section.block')];
+    const observer = new IntersectionObserver(entries => { entries.forEach(entry => { if (entry.isIntersecting) { tocLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`)); } }); }, { threshold: 0.35 });
+    sections.forEach(section => observer.observe(section));
+    renderChapterTabs(); renderChapterPanel(); renderPlanner(); renderQuiz(); renderFlash(); loadTracker(); updateTracker(); loadNotes(); loadPlan();
+  </script>
+</body>
+</html>
